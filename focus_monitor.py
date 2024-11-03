@@ -1,5 +1,10 @@
 import cv2
+import threading
 from playsound import playsound
+
+# Function to play sound in a separate thread
+def play_sound():
+    playsound('Motivation_Quickie.mp3')
 
 # Initialize the webcam
 cam = cv2.VideoCapture(0)
@@ -8,6 +13,7 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 distracted_counter = 0
 distracted_threshold = 30
+distracted_message_triggered = False
 
 while True:
     # Capture frame-by-frame
@@ -16,12 +22,17 @@ while True:
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
     if len(faces) > 0:
+        if distracted_message_triggered:
+            print("Welcome back into focus!")  # Optional: feedback when focused again
+            distracted_message_triggered = False  # Reset the flag to allow future distractions
         distracted_counter = 0  # Reset counter if a face is detected
     else:
         distracted_counter += 1  # Increment counter if no face is detected
-        if distracted_counter > distracted_threshold:
+        if distracted_counter > distracted_threshold and not distracted_message_triggered:
             print("You seem to be distracted!")
-            playsound('Motivation_Quickie.mp3')
+            # Start sound playing in a separate thread
+            threading.Thread(target=play_sound).start()
+            distracted_message_triggered = True  # Set the flag to indicate distraction
 
     for (x, y, w, h) in faces:
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
